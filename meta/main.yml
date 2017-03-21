@@ -2,7 +2,7 @@
 dependencies: [ ]
 
 galaxy_info:
-  author: Natalino Busa
+  author: Tom White, Natalino Busa
   description: Install ands configures Jupyterhub on Redhat/CentOS
   license: MIT
   min_ansible_version: 2.0
@@ -10,5 +10,5 @@ galaxy_info:
     - name: EL
       versions:
       - 7
-  categories:
+  galaxy_tags:
     - development
