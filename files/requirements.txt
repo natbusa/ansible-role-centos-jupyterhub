@@ -1,0 +1,6 @@
+jupyter
+jupyterhub
+escapism
+docker-py
+git+https://github.com/jupyter/sudospawner
+git+https://github.com/jupyterhub/dockerspawner

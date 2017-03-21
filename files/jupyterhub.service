@@ -1,0 +1,11 @@
+[Unit]
+Description=Jupyterhub
+After=network.target firewalld.service
+
+[Service]
+User=jupyterhub
+ExecStart=/usr/local/bin/jupyterhub
+WorkingDirectory=/etc/jupyterhub
+
+[Install]
+WantedBy=multi-user.target

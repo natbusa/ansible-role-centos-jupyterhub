@@ -1,0 +1,10 @@
+module sudo_exec_selinux 1.1;
+
+require {
+        type unconfined_t;
+        type sudo_exec_t;
+        class file { read entrypoint };
+}
+
+#============= unconfined_t ==============
+allow unconfined_t sudo_exec_t:file entrypoint;

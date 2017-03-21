@@ -1,0 +1,14 @@
+---
+
+- hosts: centos7
+
+- role: jupyterhub
+    jupyterhub_spawner: 'dockerspawner'
+    install_jupyterlab: True
+    generate_testusers: True
+    gen_test_username:
+      - amy
+      - joe
+      - sue
+      - bob
+
