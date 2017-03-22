@@ -82,7 +82,7 @@
   when: install_jupyterlab==True
 
 - name: register jupyterlab
-  command: jupyter serverextension enable --py jupyterlab --sys-prefix
+  command: /usr/local/bin/jupyter serverextension enable --py jupyterlab --sys-prefix
   when: install_jupyterlab==True
 
 - name: Check to see if config file exists
