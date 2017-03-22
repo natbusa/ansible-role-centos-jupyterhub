@@ -21,3 +21,6 @@ install_jupyterlab: False
 
 # dockerspawner or sudospawner
 jupyterhub_spawner: 'sudospawner'
+
+#debug
+jupyterhub_debug: False
