@@ -23,4 +23,4 @@ install_jupyterlab: False
 jupyterhub_spawner: 'sudospawner'
 
 #debug
-jupyterhub_debug: False
+jupyterhub_spawner_debug: False

@@ -127,27 +127,41 @@
   when: jupyterhub_spawner == 'dockerspawner'
 
 - name: set volume mapping
-  lineinfile: 
-    dest=/etc/jupyterhub/jupyterhub_config.py 
-    line="c.DockerSpawner.volumes = { '/home/{username}' \:\ '/home/{username}' }"
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.volumes = { '/home/{username}':'/home/{username}' }"
   when: jupyterhub_spawner == 'dockerspawner'
 
-- name: set volume mapping
+- name: set remove containers
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.remove_containers = True"
   when: jupyterhub_spawner == 'dockerspawner'
 
-# spawner command config
-- name: configure jupyterlab
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.cmd = ['jupyterhub-singleuser']"
-  when: install_jupyterlab==True
+- name: spawner args
+  set_fact:
+    jupyter_spawner_args: []
 
-- name: configure jupyterlab
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.args = ['lab']"
+#spaner debug
+- name: spawner debug
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.debug = False"
+  when: jupyterhub_spawner_debug == True
+
+- name: spawner args add '--debug'
+  set_fact:
+    jupyter_spawner_args: "{{ jupyter_spawner_args }} + ['--debug']"
+  when: jupyterhub_spawner_debug == True
+
+# spawner lab
+- name: spawner args add 'lab'
+  set_fact:
+    jupyter_spawner_args: "{{ jupyter_spawner_args }} + ['lab']"
   when: install_jupyterlab==True
 
 - name: configure jupyterlab
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.default_url = '/lab'"
   when: install_jupyterlab==True
+
+#spawner args config
+
+- name: configure jupyterlab
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.args = {{jupyter_spawner_args}}"
 
 ## SSL certificates
 - name: Check to see if certificate exists
