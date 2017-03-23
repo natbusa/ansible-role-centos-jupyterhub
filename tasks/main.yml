@@ -191,6 +191,19 @@
   stat: path=/lib/systemd/system/jupyterhub.service
   register: init_exists
 
+# add test users
+- name: add test users
+  user: name={{item}} group={{item}} groups=jupyter state=present password={{gen_test_userpass}}
+  with_items: "{{gen_test_username}}"
+  when: generate_testusers == True
+
+- name: add lab directory
+  file: path=/home/{{item}}/lab state=directory mode=0755 owner={{item}} group=jupyter
+  with_items: "{{gen_test_username}}"
+  when:
+    - generate_testusers == True
+    - install_jupyterlab == True
+
 # starting the service
 - name: install jupyterhub init script
   copy: src=jupyterhub.service dest=/lib/systemd/system/jupyterhub.service mode=755 owner=root group=root
@@ -200,13 +213,3 @@
 
 - name: start jupyterhub
   service: name=jupyterhub enabled=yes state=started
-
-- name: add test users
-  user: name={{item}} group=jupyter state=present password={{gen_test_userpass}}
-  with_items: "{{gen_test_username}}"
-  when: generate_testusers == True
-
-- name: add lab directory
-  file: path=/home/{{item}}/lab state=directory mode=0755 owner={{item}} group=jupyter
-  with_items: "{{gen_test_username}}"
-  when: (generate_testusers == True) and (install_jupyterlab == True)
