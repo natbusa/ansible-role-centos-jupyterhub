@@ -193,7 +193,7 @@
 
 # add test users
 - name: add test users
-  user: name={{item}} group={{item}} groups=jupyter state=present password={{gen_test_userpass}}
+  user: name={{item}} groups=jupyter append=yes state=present password={{gen_test_userpass}}
   with_items: "{{gen_test_username}}"
   when: generate_testusers == True
 
