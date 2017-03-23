@@ -208,8 +208,5 @@
 - name: install jupyterhub init script
   copy: src=jupyterhub.service dest=/lib/systemd/system/jupyterhub.service mode=755 owner=root group=root
 
-- name: Ensure hostname is in /etc/hosts file
-  lineinfile: dest=/etc/hosts regexp="{{ansible_hostname}}" line="{{ansible_default_ipv4.address}} {{ansible_hostname}}"
-
 - name: start jupyterhub
   service: name=jupyterhub enabled=yes state=started
