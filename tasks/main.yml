@@ -126,6 +126,11 @@
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.spawner_class = 'sudospawner.SudoSpawner'"
   when: jupyterhub_spawner == 'sudospawner' or jupyterhub_spawner == 'sudospawner-lab'
 
+# config: spawner general settings - disable user config
+- name: jupyterhub config - set notebook dir
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.disable_user_config = True"
+  when: jupyterhub_spawner == 'sudospawner' or jupyterhub_spawner == 'sudospawner-lab'
+
 - name: jupyterhub config - use the system spawner
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.spawner_class = 'dockerspawner.SystemUserSpawner'"
   when: jupyterhub_spawner == 'dockerspawner'
