@@ -67,8 +67,8 @@
 - name: (docker) make sure that the daemon is running
   service: name=docker state=started
 
-- name: (docker) pull the image {{default_docker_notebook_image}}
-  command: docker pull {{default_docker_notebook_image}}
+- name: (docker) pull the image {{jupyterhub_spawner_docker_image}}
+  command: docker pull {{jupyterhub_spawner_docker_image}}
   when: jupyterhub_spawner == 'dockerspawner'
 
 - name: create jupyterhub folder in etc
@@ -86,15 +86,11 @@
 
 - name: install jupyterlab
   pip: executable=/usr/local/bin/pip3 name=jupyterlab
-  when:
-    - install_jupyterlab==True
-    - jupyterhub_spawner == 'sudospawner'
+  when: jupyterhub_spawner == 'sudospawner-lab'
 
 - name: register jupyterlab
   command: /usr/local/bin/jupyter serverextension enable --py jupyterlab --sys-prefix
-  when:
-    - install_jupyterlab==True
-    - jupyterhub_spawner == 'sudospawner'
+  when: jupyterhub_spawner == 'sudospawner-lab'
 
 - name: Check to see if config file exists
   stat: path=/etc/jupyterhub/jupyterhub_config.py
@@ -128,7 +124,7 @@
 # config: select spawner
 - name: jupyterhub config - set sudo spawner
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.spawner_class = 'sudospawner.SudoSpawner'"
-  when: jupyterhub_spawner == 'sudospawner'
+  when: jupyterhub_spawner == 'sudospawner' or jupyterhub_spawner == 'sudospawner-lab'
 
 - name: jupyterhub config - use the system spawner
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.spawner_class = 'dockerspawner.SystemUserSpawner'"
@@ -138,14 +134,15 @@
 - name: jupyterhub config - set notebook dir
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.notebook_dir = '~'"
 
-# config: spawner general settings - disable user config
+# config: sudo spawner - disable user config
 - name: jupyterhub config - set notebook dir
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.disable_user_config = True"
+  when: jupyterhub_spawner == 'sudospawner' or jupyterhub_spawner == 'sudospawner-lab'
 
-# spawner lab
+# config: sudo spawner - spawner lab
 - name: jupyterhub config - configure jupyterlab
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.default_url = '/lab'"
-  when: install_jupyterlab==True
+  when: jupyterhub_spawner == 'sudospawner-lab'
 
 # config: docker spawner
 - name: jupyterhub config - docker spawner -set container ip
@@ -163,10 +160,10 @@
 # spawner: docker starts lab or notebook by default
 # Spawn containers from
 #   - env var DOCKER_NOTEBOOK_IMAGE when starting the service (at run time)
-#   - the provided default_docker_notebook_image (at provisioning time)
+#   - the provided jupyterhub_spawner_docker_image (at provisioning time)
 
 - name: jupyterhub config - docker spawner - set image
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.container_image = os.environ.get('DOCKER_NOTEBOOK_IMAGE','{{default_docker_notebook_image}}')"
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.container_image = os.environ.get('DOCKER_NOTEBOOK_IMAGE','{{jupyterhub_spawner_docker_image}}')"
   when: jupyterhub_spawner == 'dockerspawner'
 
 # config: docker spawner: map the volumes with the host volumes
@@ -207,12 +204,12 @@
   with_items: "{{gen_test_username}}"
   when: generate_testusers == True
 
+# add data science directory (not required for actual users)
 - name: add lab directory
   file: path=/home/{{item}}/lab state=directory mode=0755 owner={{item}} group=jupyter
   with_items: "{{gen_test_username}}"
   when:
     - generate_testusers == True
-    - install_jupyterlab == True
 
 # starting the service
 - name: install jupyterhub init script

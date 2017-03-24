@@ -4,8 +4,7 @@
 
 - role: jupyterhub
     jupyterhub_spawner: 'dockerspawner'
-    default_docker_notebook_image: 'natbusa/sysuser-scipy-lab'
-    install_jupyterlab: True
+    jupyterhub_spawner_docker_image: 'natbusa/sysuser-scipy-lab'
     generate_testusers: True
     gen_test_username:
       - amy

@@ -20,18 +20,19 @@ Role Variables
 The only role vars that the user needs to worry about are:
 
 - `nossl: False`: if set to True, will enable https for the jupyterhub proxy
-- `jupyterhub_spawner: sudospawner`: Select either `dockerspawner` or `sudospawner`
-- `install_jupyterlab: False`: Will start by default jupyter notebook, but can be set to start the jupyter lab if set to True
+- `jupyterhub_spawner: sudospawner`: Select either `dockerspawner` or `sudospawner` or `sudospawner-lab`
+- `jupyterhub_spawner_docker_image: jupyterhub/systemuser`: select which image you would like to start up in `dockerspawner` mode
 - `generate_testusers: False`: will generate test users. Test users will be assigned to the `jupyter` group.
 
 Spawners
 ------------
 
 *dockerspawner* will use the `dockerspawner.SystemUserSpawner` and match the host username and uid, with the one in the container.
-It will also map the container home dir with the home dir in the host. 
-Depending on the setting of `install_jupyterlab` it will start `jupyter-singleuser` running either the notebook or the lab webapp. 
+It will also map the container home dir with the home dir in the host. Depending on the setting of `install_jupyterlab` it will start `jupyter-singleuser` running either the notebook or the lab webapp. 
 
 *sudospawner* will spawn a jupyter-singleuser process in the host process space.
+
+*sudospawner-lab* same as the *sudospawner* but starts lab by default.
 
 Pro and cons:
 
@@ -58,9 +59,9 @@ eg:
       hosts: localhost
       sudo: yes
       
-      - role: centos-jupyterhub
-        jupyterhub_spawner: 'sudospawner'
-        install_jupyterlab: True
+    - role: centos-jupyterhub
+        jupyterhub_spawner: 'dockerspawner'
+        jupyterhub_spawner_docker_image: 'natbusa/sysuser-scipy-lab'
         generate_testusers: True
         gen_test_username:
           - amy
