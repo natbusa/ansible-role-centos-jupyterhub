@@ -93,76 +93,69 @@
   command: /usr/local/bin/jupyterhub --generate-config chdir=/etc/jupyterhub/ creates=/etc/jupyterhub/jupyterhub_config.py
   when: config_exists.stat.exists == False
 
-- name: (PAM) set sessions policy
+# jupyterhub config: PAM policies
+- name: jupyterhub config - (PAM) set sessions policy
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.PAMAuthenticator.open_sessions = False"
 
-- name: (PAM) set auth service
+- name: jupyterhub config - (PAM) set auth service
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.PAMAuthenticator.service = 'login'"
 
-# config: ip addresses
-- name: set IP address
+# jupyterhub config:: ip addresses
+- name: jupyterhub config - set IP address
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.hub_ip = '{{ansible_eth0.ipv4.address}}'"
 
-- name: set IP address
+- name: jupyterhub config - set IP address
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.ip = '{{ansible_eth0.ipv4.address}}'"
 
-- name: set IP address
+- name: jupyterhub config - set IP address
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.proxy_api_ip = '{{ansible_eth0.ipv4.address}}'"
 
-# config: sudo spawner
-- name: set sudospawner
+# config: select spawner
+- name: jupyterhub config - set sudo spawner
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.spawner_class = 'sudospawner.SudoSpawner'"
   when: jupyterhub_spawner == 'sudospawner'
 
-# config: docker spawner
-- name: set container ip
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.container_ip = "0.0.0.0""
-  when: jupyterhub_spawner == 'dockerspawner'
-
-- name: use the system spawner
+- name: jupyterhub config - use the system spawner
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.spawner_class = 'dockerspawner.SystemUserSpawner'"
   when: jupyterhub_spawner == 'dockerspawner'
 
-- name: set host home dir
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.SystemUserSpawner.host_homedir_format_string = '/home/{username}'"
-  when: jupyterhub_spawner == 'dockerspawner'
-
-- name: set volume mapping
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.volumes = { '/home/{username}':'/home/{username}' }"
-  when: jupyterhub_spawner == 'dockerspawner'
-
-- name: set remove containers
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.remove_containers = True"
-  when: jupyterhub_spawner == 'dockerspawner'
-
-- name: spawner args
-  set_fact:
-    jupyter_spawner_args: []
-
-#spaner debug
-- name: spawner debug
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.debug = False"
-  when: jupyterhub_spawner_debug == True
-
-- name: spawner args add '--debug'
-  set_fact:
-    jupyter_spawner_args: "{{ jupyter_spawner_args }} + ['--debug']"
-  when: jupyterhub_spawner_debug == True
+# config: spawner general settings - notebook_dir
+- name: jupyterhub config - set notebook dir
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.notebook_dir = '/home/{username}'"
 
 # spawner lab
-- name: spawner args add 'lab'
-  set_fact:
-    jupyter_spawner_args: "{{ jupyter_spawner_args }} + ['lab']"
-  when: install_jupyterlab==True
-
-- name: configure jupyterlab
+- name: jupyterhub config - configure jupyterlab
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.default_url = '/lab'"
   when: install_jupyterlab==True
 
-#spawner args config
+# config: docker spawner
+- name: jupyterhub config - docker spawner - set host home dir
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.SystemUserSpawner.host_homedir_format_string = '/home/{username}'"
+  when: jupyterhub_spawner == 'dockerspawner'
 
+- name: jupyterhub config - docker spawner -set container ip
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.container_ip = "0.0.0.0""
+  when: jupyterhub_spawner == 'dockerspawner'
+
+- name: jupyterhub config - docker spawner - set volume mapping
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.volumes = { '/home/{username}':'/home/{username}' }"
+  when: jupyterhub_spawner == 'dockerspawner'
+
+- name: jupyterhub config - docker spawner - set remove containers
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.remove_containers = True"
+  when: jupyterhub_spawner == 'dockerspawner'
+
+# spawner: docker starts lab or notebook by default
+# Spawn containers from env var DOCKER_NOTEBOOK_IMAGE or from the provided default image
+- name: jupyterhub config - docker spawner - set image
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.container_image = os.environ.get('DOCKER_NOTEBOOK_IMAGE','{{default_docker_notebook_image}}')"
+  when: jupyterhub_spawner == 'dockerspawner'
+
+# Add this to start in notebook mode (default is lab)
+# spawner lab
 - name: configure jupyterlab
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.args = {{jupyter_spawner_args}}"
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.extra_create_kwargs.update({ 'command':'/srv/singleuser/systemuser.sh'})"
+  when: install_jupyterlab==False
 
 ## SSL certificates
 - name: Check to see if certificate exists
