@@ -38,16 +38,16 @@
 
 - name: (PAM) SELinux settings
   command: checkmodule -M -m -o /root/sudo_exec_selinux.mod /root/sudo_exec_selinux.te
-  when: selinux_config.changed
+  when: selinux_config.changed==true
 
 - name: (PAM) SELinux settings
   command: semodule_package -o /root/sudo_exec_selinux.pp -m /root/sudo_exec_selinux.mod
-  when: selinux_config.changed
+  when: selinux_config.changed==true
 
 - name: (PAM) SELinux settings
   command: semodule -i /root/sudo_exec_selinux.pp
-  when: selinux_config.changed
-  
+  when: selinux_config.changed==true
+
 ## Jupyterhub: non-root user and groups
 - name: add jupyter group
   group: name=jupyter state=present
@@ -65,7 +65,7 @@
   command: usermod -aG docker jupyterhub
 
 - name: (docker) pull the image jupyterhub/systemuser
-  command: docker pull jupyterhub/systemuser
+  command: docker pull {{default_docker_notebook_image}}
   when: jupyterhub_spawner == 'dockerspawner'
 
 - name: create jupyterhub folder in etc
@@ -78,16 +78,20 @@
 - name: copy requirements file for jupyterhub
   copy: src=requirements.txt dest=/root/jupyterhub_requirements.txt
 
-- name: install jupyter, jupyterhub, sudospawner, dockerspawner etc via pip3
+- name: install jupyter packages via pip3
   pip: executable=/usr/local/bin/pip3 requirements="/root/jupyterhub_requirements.txt" extra_args='--upgrade'
 
 - name: install jupyterlab
   pip: executable=/usr/local/bin/pip3 name=jupyterlab
-  when: install_jupyterlab==True
+  when:
+    - install_jupyterlab==True
+    - jupyterhub_spawner == 'sudospawner'
 
 - name: register jupyterlab
   command: /usr/local/bin/jupyter serverextension enable --py jupyterlab --sys-prefix
-  when: install_jupyterlab==True
+  when:
+    - install_jupyterlab==True
+    - jupyterhub_spawner == 'sudospawner'
 
 - name: Check to see if config file exists
   stat: path=/etc/jupyterhub/jupyterhub_config.py
