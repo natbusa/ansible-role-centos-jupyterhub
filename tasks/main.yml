@@ -93,6 +93,10 @@
   command: /usr/local/bin/jupyterhub --generate-config chdir=/etc/jupyterhub/ creates=/etc/jupyterhub/jupyterhub_config.py
   when: config_exists.stat.exists == False
 
+# jupyterhub config: python imports
+- name: jupyterhub config - python imports
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="import os"
+
 # jupyterhub config: PAM policies
 - name: jupyterhub config - (PAM) set sessions policy
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.PAMAuthenticator.open_sessions = False"
