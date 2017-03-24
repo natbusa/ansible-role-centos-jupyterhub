@@ -34,16 +34,20 @@
 
 - name: (PAM) SELinux settings
   copy: src=sudo_exec_selinux.te dest=/root/sudo_exec_selinux.te
+  register: selinux_config
 
 - name: (PAM) SELinux settings
   command: checkmodule -M -m -o /root/sudo_exec_selinux.mod /root/sudo_exec_selinux.te
+  when: selinux_config.changed
 
 - name: (PAM) SELinux settings
   command: semodule_package -o /root/sudo_exec_selinux.pp -m /root/sudo_exec_selinux.mod
+  when: selinux_config.changed
 
 - name: (PAM) SELinux settings
   command: semodule -i /root/sudo_exec_selinux.pp
-
+  when: selinux_config.changed
+  
 ## Jupyterhub: non-root user and groups
 - name: add jupyter group
   group: name=jupyter state=present
