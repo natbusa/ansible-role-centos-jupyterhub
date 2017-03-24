@@ -133,7 +133,7 @@
 
 # config: spawner general settings - notebook_dir
 - name: jupyterhub config - set notebook dir
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.notebook_dir = '/home/{username}'"
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.notebook_dir = '~'"
 
 # config: spawner general settings - disable user config
 - name: jupyterhub config - set notebook dir
@@ -145,10 +145,6 @@
   when: install_jupyterlab==True
 
 # config: docker spawner
-- name: jupyterhub config - docker spawner - set host home dir
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.SystemUserSpawner.host_homedir_format_string = '/home/{username}'"
-  when: jupyterhub_spawner == 'dockerspawner'
-
 - name: jupyterhub config - docker spawner -set container ip
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.container_ip = "0.0.0.0""
   when: jupyterhub_spawner == 'dockerspawner'
@@ -162,9 +158,17 @@
   when: jupyterhub_spawner == 'dockerspawner'
 
 # spawner: docker starts lab or notebook by default
-# Spawn containers from env var DOCKER_NOTEBOOK_IMAGE or from the provided default image
+# Spawn containers from
+#   - env var DOCKER_NOTEBOOK_IMAGE when starting the service (at run time)
+#   - the provided default_docker_notebook_image (at provisioning time)
+
 - name: jupyterhub config - docker spawner - set image
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.container_image = os.environ.get('DOCKER_NOTEBOOK_IMAGE','{{default_docker_notebook_image}}')"
+  when: jupyterhub_spawner == 'dockerspawner'
+
+# config: docker spawner: map the volumes with the host volumes
+- name: jupyterhub config - docker spawner - set host home dir
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.SystemUserSpawner.host_homedir_format_string = '/home/{username}'"
   when: jupyterhub_spawner == 'dockerspawner'
 
 ## SSL certificates
