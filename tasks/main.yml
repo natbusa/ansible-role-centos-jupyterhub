@@ -64,7 +64,7 @@
 - name: (docker) add jupyterhub to docker
   command: usermod -aG docker jupyterhub
 
-- name: (docker) pull the image jupyterhub/systemuser
+- name: (docker) pull the image {{default_docker_notebook_image}}
   command: docker pull {{default_docker_notebook_image}}
   when: jupyterhub_spawner == 'dockerspawner'
 
@@ -135,6 +135,10 @@
 - name: jupyterhub config - set notebook dir
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.notebook_dir = '/home/{username}'"
 
+# config: spawner general settings - disable user config
+- name: jupyterhub config - set notebook dir
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.disable_user_config = True"
+
 # spawner lab
 - name: jupyterhub config - configure jupyterlab
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.default_url = '/lab'"
@@ -162,12 +166,6 @@
 - name: jupyterhub config - docker spawner - set image
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.container_image = os.environ.get('DOCKER_NOTEBOOK_IMAGE','{{default_docker_notebook_image}}')"
   when: jupyterhub_spawner == 'dockerspawner'
-
-# Add this to start in notebook mode (default is lab)
-# spawner lab
-- name: configure jupyterlab
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.extra_create_kwargs.update({ 'command':'/srv/singleuser/systemuser.sh'})"
-  when: install_jupyterlab==False
 
 ## SSL certificates
 - name: Check to see if certificate exists
