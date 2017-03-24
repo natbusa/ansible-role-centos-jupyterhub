@@ -64,6 +64,9 @@
 - name: (docker) add jupyterhub to docker
   command: usermod -aG docker jupyterhub
 
+- name: (docker) make sure that the daemon is running
+  service: name=docker state=started
+
 - name: (docker) pull the image {{default_docker_notebook_image}}
   command: docker pull {{default_docker_notebook_image}}
   when: jupyterhub_spawner == 'dockerspawner'
