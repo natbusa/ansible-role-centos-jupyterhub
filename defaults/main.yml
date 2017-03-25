@@ -16,7 +16,7 @@ gen_test_userpass: '$6$NqQZN4.O6J93PDXg$VbF7oebk09bOZrlnnCEOv42nxvskugdcO51PS520
 # password is 'password', generated with:
 # python -c "from passlib.hash import sha512_crypt; import getpass; print(sha512_crypt.using(rounds=5000).hash('password'));"
 
-# dockerspawner or sudospawner or sudospawner-lab
+# imagespawner, dockerspawner or sudospawner or sudospawner-lab
 jupyterhub_spawner: 'sudospawner'
 
 #use this default image (notebook only)

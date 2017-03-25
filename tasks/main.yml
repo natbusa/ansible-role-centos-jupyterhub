@@ -66,16 +66,30 @@
 
 - name: (docker) make sure that the daemon is running
   service: name=docker state=started
+  when: jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
 
-- name: (docker) pull the image {{jupyterhub_spawner_docker_image}}
-  command: docker pull {{jupyterhub_spawner_docker_image}}
-  when: jupyterhub_spawner == 'dockerspawner'
+# get the images
+- name: create alias for jupyterhub_spawner_docker_image
+  set_fact:
+      docker_images: {{ jupyterhub_spawner_docker_image }}
+  when: jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
+
+- name: create a list of images
+  set_fact:
+      docker_images: {{ docker_images is string | ternary([docker_images], docker_images) }}
+  when: jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
+
+- name: (docker) pull the images
+  command: docker pull {{item}}
+  with_items: {{docker_images}}
+  when: jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
 
 - name: create jupyterhub folder in etc
   file: path=/etc/jupyterhub state=directory mode=0755 owner=jupyterhub group=jupyter
 
 - name: copy jupyterhub sudospawner sudo config
   copy: src=sudo_jupyter dest=/etc/sudoers.d/jupyter mode=0440 owner=root group=root
+  when: jupyterhub_spawner == 'sudospawner' or jupyterhub_spawner == 'sudospawner-lab'
 
 # jupyterhub: python packahes and config
 - name: copy requirements file for jupyterhub
@@ -131,9 +145,23 @@
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.Spawner.disable_user_config = True"
   when: jupyterhub_spawner == 'sudospawner' or jupyterhub_spawner == 'sudospawner-lab'
 
+# config: select dockerspawner
 - name: jupyterhub config - use the system spawner
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.spawner_class = 'dockerspawner.SystemUserSpawner'"
   when: jupyterhub_spawner == 'dockerspawner'
+
+# config: select imagespawner
+- name: copy requirements file for jupyterhub
+  copy: src=imagespawner.py dest=/etc/jupyterhub mode=0440 owner=jupyterhub group=jupyter
+  when: jupyterhub_spawner == 'imagespawner'
+
+- name: jupyterhub config - use the system spawner
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="from imagespawner import DockerImageChooserSpawner"
+  when: jupyterhub_spawner == 'imagespawner'
+
+- name: jupyterhub config - use the system spawner
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.spawner_class = DockerImageChooserSpawner"
+  when: jupyterhub_spawner == 'imagespawner'
 
 # config: spawner general settings - notebook_dir
 - name: jupyterhub config - set notebook dir
@@ -152,15 +180,15 @@
 # config: docker spawner
 - name: jupyterhub config - docker spawner -set container ip
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.container_ip = "0.0.0.0""
-  when: jupyterhub_spawner == 'dockerspawner'
+  when: jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
 
 - name: jupyterhub config - docker spawner - set volume mapping
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.volumes = { '/home/{username}':'/home/{username}' }"
-  when: jupyterhub_spawner == 'dockerspawner'
+  when: jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
 
 - name: jupyterhub config - docker spawner - set remove containers
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.remove_containers = True"
-  when: jupyterhub_spawner == 'dockerspawner'
+  when: jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
 
 # spawner: docker starts lab or notebook by default
 # Spawn containers from
@@ -168,13 +196,17 @@
 #   - the provided jupyterhub_spawner_docker_image (at provisioning time)
 
 - name: jupyterhub config - docker spawner - set image
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.container_image = os.environ.get('DOCKER_NOTEBOOK_IMAGE','{{jupyterhub_spawner_docker_image}}')"
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerSpawner.container_image = os.environ.get('DOCKER_NOTEBOOK_IMAGE','{{docker_images[0]}}')"
   when: jupyterhub_spawner == 'dockerspawner'
+
+- name: jupyterhub config - docker spawner - set image
+  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.DockerImageChooserSpawner.dockerimages = {{docker_images}}"
+  when: jupyterhub_spawner == 'imagespawner'
 
 # config: docker spawner: map the volumes with the host volumes
 - name: jupyterhub config - docker spawner - set host home dir
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.SystemUserSpawner.host_homedir_format_string = '/home/{username}'"
-  when: jupyterhub_spawner == 'dockerspawner'
+  when: jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
 
 ## SSL certificates
 - name: Check to see if certificate exists
