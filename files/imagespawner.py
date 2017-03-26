@@ -1,4 +1,4 @@
-from systemuserspawner import SystemUserSpawner
+from dockerspawner import SystemUserSpawner
 from traitlets import default, Unicode, List
 from tornado import gen
 

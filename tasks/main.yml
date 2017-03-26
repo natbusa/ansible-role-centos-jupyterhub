@@ -71,17 +71,21 @@
 # get the images
 - name: create alias for jupyterhub_spawner_docker_image
   set_fact:
-      docker_images: {{ jupyterhub_spawner_docker_image }}
-  when: jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
+      docker_images: "{{ jupyterhub_spawner_docker_image }}"
+  when:
+    - jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
+    - jupyterhub_spawner_docker_image.0 is defined
 
-- name: create a list of images
+- name: create alias for jupyterhub_spawner_docker_image
   set_fact:
-      docker_images: {{ docker_images is string | ternary([docker_images], docker_images) }}
-  when: jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
+      docker_images: [ '{{ jupyterhub_spawner_docker_image }}' ]
+  when:
+    - jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
+    - jupyterhub_spawner_docker_image is string
 
 - name: (docker) pull the images
   command: docker pull {{item}}
-  with_items: {{docker_images}}
+  with_items: "{{docker_images}}"
   when: jupyterhub_spawner == 'dockerspawner' or jupyterhub_spawner == 'imagespawner'
 
 - name: create jupyterhub folder in etc
@@ -152,7 +156,7 @@
 
 # config: select imagespawner
 - name: copy requirements file for jupyterhub
-  copy: src=imagespawner.py dest=/etc/jupyterhub mode=0440 owner=jupyterhub group=jupyter
+  copy: src=imagespawner.py dest=/etc/jupyterhub mode=0640 owner=jupyterhub group=jupyter
   when: jupyterhub_spawner == 'imagespawner'
 
 - name: jupyterhub config - use the system spawner
