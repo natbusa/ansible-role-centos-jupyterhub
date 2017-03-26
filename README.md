@@ -46,11 +46,6 @@ dockerspawner is a more indirect/complex in the setup and require an extra level
 However, Python and R packages are contained in the image and the host is only responsible for the proxy/auth/spawn logistics
 It also separate the versioning of R/Python from those setup in the host environment
 
-Dependencies
-------------
-
-None
-
 Examples Playbook
 ----------------
 
