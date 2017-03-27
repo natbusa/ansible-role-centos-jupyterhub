@@ -58,7 +58,7 @@ docker spawner with four test users:
       
     - role: centos-jupyterhub
         jupyterhub_spawner: 'dockerspawner'
-        jupyterhub_spawner_docker_image: 'natbusa/sysuser-scipy-lab'
+        jupyterhub_spawner_docker_image: 'natbusa/jupyterhub-scipy-lab'
         generate_testusers: True
         gen_test_username:
           - amy
@@ -77,10 +77,10 @@ docker spawner with four test users:
     - role: centos-jupyterhub
       jupyterhub_spawner: 'imagespawner'
       jupyterhub_spawner_docker_image:
-        - 'natbusa/sysuser-scipy-lab'
-        - 'natbusa/sysuser-datascience-lab'
-        - 'natbusa/sysuser-tensorflow-lab'
-        - 'natbusa/sysuser-all-spark-lab'
+        - 'natbusa/jupyterhub-scipy-lab'
+        - 'natbusa/jupyterhub-datascience-lab'
+        - 'natbusa/jupyterhub-tensorflow-lab'
+        - 'natbusa/jupyterhub-all-spark-lab'
       generate_testusers: True
       gen_test_username:
         - amy
@@ -97,10 +97,10 @@ At the moment this particular script is not part of the jupyter/docker-stacks.
 avaiable docker images for this setup:
 
 - 'jupyterhub/systemuser'
-- 'natbusa/sysuser-scipy-lab'
-- 'natbusa/sysuser-datascience-lab'
-- 'natbusa/sysuser-tensorflow-lab'
-- 'natbusa/sysuser-all-spark-lab'    
+- 'natbusa/jupyterhub-scipy-lab'
+- 'natbusa/jupyterhub-datascience-lab'
+- 'natbusa/jupyterhub-tensorflow-lab'
+- 'natbusa/jupyterhub-all-spark-lab'    
 
 License
 -------
