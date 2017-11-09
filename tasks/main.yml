@@ -100,14 +100,14 @@
   copy: src=requirements.txt dest=/root/jupyterhub_requirements.txt
 
 - name: install jupyter packages via pip3
-  pip: executable=/usr/local/bin/pip3 requirements="/root/jupyterhub_requirements.txt" extra_args='--upgrade'
+  pip: executable="{{ python_path }}/pip3" requirements="/root/jupyterhub_requirements.txt" extra_args='--upgrade'
 
 - name: install jupyterlab
-  pip: executable=/usr/local/bin/pip3 name=jupyterlab
+  pip: executable="{{ python_path }}/pip3 name=jupyterlab
   when: jupyterhub_spawner == 'sudospawner-lab'
 
 - name: register jupyterlab
-  command: /usr/local/bin/jupyter serverextension enable --py jupyterlab --sys-prefix
+  command: "{{ python_path }}/jupyter serverextension enable --py jupyterlab --sys-prefix"
   when: jupyterhub_spawner == 'sudospawner-lab'
 
 - name: Check to see if config file exists
@@ -115,7 +115,7 @@
   register: config_exists
 
 - name: configure jupyterhub
-  command: /usr/local/bin/jupyterhub --generate-config chdir=/etc/jupyterhub/ creates=/etc/jupyterhub/jupyterhub_config.py
+  command: "{{ pythonpath }}/jupyterhub --generate-config chdir=/etc/jupyterhub/ creates=/etc/jupyterhub/jupyterhub_config.py"
   when: config_exists.stat.exists == False
 
 # jupyterhub config: python imports
