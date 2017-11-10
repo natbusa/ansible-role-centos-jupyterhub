@@ -1,7 +1,7 @@
 ---
 
 ## Jupyterhub essential yum packages
-- name: check if repel repo is available
+- name: check if epel repo is available
   yum: name=epel-release state=present update_cache=yes
 
 - name: make sure necessary yum packages are installed
