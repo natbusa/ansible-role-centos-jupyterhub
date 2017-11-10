@@ -120,7 +120,7 @@
   register: config_exists
 
 - name: configure jupyterhub
-  command: "{{ pythonpath }}/jupyterhub --generate-config chdir=/etc/jupyterhub/ creates=/etc/jupyterhub/jupyterhub_config.py"
+  command: "{{ python_path }}/jupyterhub --generate-config chdir=/etc/jupyterhub/ creates=/etc/jupyterhub/jupyterhub_config.py"
   when: config_exists.stat.exists == False
 
 # jupyterhub config: python imports
