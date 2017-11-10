@@ -100,10 +100,15 @@
   copy: src=requirements.txt dest=/root/jupyterhub_requirements.txt
 
 - name: install jupyter packages via pip3
-  pip: executable="{{ python_path }}/pip3" requirements="/root/jupyterhub_requirements.txt" extra_args='--upgrade'
+  pip:
+    executable: "{{ python_path }}/pip3"
+    requirements: "/root/jupyterhub_requirements.txt"
+    extra_args: '--upgrade'
 
 - name: install jupyterlab
-  pip: executable="{{ python_path }}/pip3 name=jupyterlab
+  pip:
+    executable: "{{ python_path }}/pip3"
+    name: jupyterlab
   when: jupyterhub_spawner == 'sudospawner-lab'
 
 - name: register jupyterlab
@@ -130,6 +135,7 @@
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.PAMAuthenticator.service = 'login'"
 
 # jupyterhub config:: ip addresses
+
 - name: jupyterhub config - set IP address
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.hub_ip = '{{ansible_eth0.ipv4.address}}'"
 
