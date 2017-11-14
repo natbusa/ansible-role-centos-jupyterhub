@@ -1,7 +1,7 @@
 ---
 
 ## Jupyterhub essential yum packages
-- name: check if repel repo is available
+- name: check if epel repo is available
   yum: name=epel-release state=present update_cache=yes
 
 - name: make sure necessary yum packages are installed
@@ -17,7 +17,7 @@
 
 ## PAM auth and SELinux settings
 - name: (SELinux) yum packages
-  yum: name={{item}} state=latest 
+  yum: name={{item}} state=latest
   with_items:
     - checkpolicy
     - policycoreutils
@@ -60,7 +60,7 @@
 
 - name: (docker) create a docker group
   group: name=docker state=present
-  
+
 - name: (docker) add jupyterhub to docker
   command: usermod -aG docker jupyterhub
 
@@ -92,7 +92,12 @@
   file: path=/etc/jupyterhub state=directory mode=0755 owner=jupyterhub group=jupyter
 
 - name: copy jupyterhub sudospawner sudo config
-  copy: src=sudo_jupyter dest=/etc/sudoers.d/jupyter mode=0440 owner=root group=root
+  template:
+    src: sudo_jupyter.j2
+    dest: /etc/sudoers.d/jupyter
+    mode: 0440
+    owner: root
+    group: root
   when: jupyterhub_spawner == 'sudospawner' or jupyterhub_spawner == 'sudospawner-lab'
 
 # jupyterhub: python packahes and config
@@ -100,14 +105,19 @@
   copy: src=requirements.txt dest=/root/jupyterhub_requirements.txt
 
 - name: install jupyter packages via pip3
-  pip: executable=/usr/local/bin/pip3 requirements="/root/jupyterhub_requirements.txt" extra_args='--upgrade'
+  pip:
+    executable: "{{ python_path }}/pip3"
+    requirements: "/root/jupyterhub_requirements.txt"
+    extra_args: '--upgrade'
 
 - name: install jupyterlab
-  pip: executable=/usr/local/bin/pip3 name=jupyterlab
+  pip:
+    executable: "{{ python_path }}/pip3"
+    name: jupyterlab
   when: jupyterhub_spawner == 'sudospawner-lab'
 
 - name: register jupyterlab
-  command: /usr/local/bin/jupyter serverextension enable --py jupyterlab --sys-prefix
+  command: "{{ python_path }}/jupyter serverextension enable --py jupyterlab --sys-prefix"
   when: jupyterhub_spawner == 'sudospawner-lab'
 
 - name: Check to see if config file exists
@@ -115,7 +125,7 @@
   register: config_exists
 
 - name: configure jupyterhub
-  command: /usr/local/bin/jupyterhub --generate-config chdir=/etc/jupyterhub/ creates=/etc/jupyterhub/jupyterhub_config.py
+  command: "{{ python_path }}/jupyterhub --generate-config chdir=/etc/jupyterhub/ creates=/etc/jupyterhub/jupyterhub_config.py"
   when: config_exists.stat.exists == False
 
 # jupyterhub config: python imports
@@ -130,14 +140,40 @@
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.PAMAuthenticator.service = 'login'"
 
 # jupyterhub config:: ip addresses
-- name: jupyterhub config - set IP address
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.hub_ip = '{{ansible_eth0.ipv4.address}}'"
+
+- name: determine IP address for services
+  set_fact:
+    jupyterhub_ip_guts: '{{ jupyterhub_ip or ansible_eth0.ipv4.address }}'
+
+- debug:
+    var: jupyterhub_ip_guts
+    verbosity: 1
 
 - name: jupyterhub config - set IP address
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.ip = '{{ansible_eth0.ipv4.address}}'"
+  lineinfile:
+    dest: /etc/jupyterhub/jupyterhub_config.py
+    line: "c.JupyterHub.hub_ip = '{{jupyterhub_ip_guts}}'"
+    regexp: '^c.JupyterHub.hub_ip ='
 
 - name: jupyterhub config - set IP address
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.proxy_api_ip = '{{ansible_eth0.ipv4.address}}'"
+  lineinfile:
+    dest: /etc/jupyterhub/jupyterhub_config.py
+    line: "c.JupyterHub.ip = '{{jupyterhub_ip_guts}}'"
+    regexp: '^c.JupyterHub.ip ='
+
+- name: jupyterhub config - set IP address
+  lineinfile:
+    dest: /etc/jupyterhub/jupyterhub_config.py
+    line: "c.JupyterHub.proxy_api_ip = '{{jupyterhub_ip_guts}}'"
+    regexp: '^c.JupyterHub.proxy_api_ip ='
+
+# jupyterhub config:: port number
+
+- name: jupyterhub config - set proxy port
+  lineinfile:
+    dest: /etc/jupyterhub/jupyterhub_config.py
+    line: 'c.JupyterHub.port = {{ jupyterhub_port }}'
+    regexp: '^c.JupyterHub.port ='
 
 # config: select spawner
 - name: jupyterhub config - set sudo spawner
@@ -219,7 +255,7 @@
 
 - name: create self-signed SSL cert
   command: openssl req -new -nodes -x509 -subj "/C={{ssl_country}}/ST={{ssl_state}}/L={{ssl_city}}/O={{ssl_org}}/CN=${ansible_fqdn}" -days 3650 -keyout /etc/jupyterhub/server.key -out /etc/jupyterhub/server.crt -extensions v3_ca creates=/etc/jupyterhub/server.crt
-  when: 
+  when:
     - nossl == False
     - cert_exists.stat.exists == False
 
@@ -234,10 +270,6 @@
 - name: remove ssl setting
   lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.confirm_no_ssl = True"
   when: nossl == True
-
-- name: Check to see if config file exists
-  stat: path=/lib/systemd/system/jupyterhub.service
-  register: init_exists
 
 # add test users
 - name: add test users
@@ -254,7 +286,12 @@
 
 # starting the service
 - name: install jupyterhub init script
-  copy: src=jupyterhub.service dest=/lib/systemd/system/jupyterhub.service mode=755 owner=root group=root
+  template:
+    src: jupyterhub.service.j2
+    dest: /lib/systemd/system/jupyterhub.service
+    owner: root
+    group: root
+    mode: 0644
 
 - name: start jupyterhub
   service: name=jupyterhub enabled=yes state=started
