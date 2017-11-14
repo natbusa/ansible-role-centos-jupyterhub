@@ -136,31 +136,30 @@
 
 # jupyterhub config:: ip addresses
 
-- name: determine default IP address for services
+- name: determine IP address for services
   set_fact:
-    jupyterhub_ip: {{ ansible_eth0.ipv4.address }}
-  when: ! jupyterhub_ip|bool
+    jupyterhub_ip_guts: '{{ jupyterhub_ip or ansible_eth0.ipv4.address }}'
 
 - debug:
-    var: jupyterhub_ip
+    var: jupyterhub_ip_guts
     verbosity: 1
 
 - name: jupyterhub config - set IP address
   lineinfile:
     dest: /etc/jupyterhub/jupyterhub_config.py
-    line: "c.JupyterHub.hub_ip = '{{jupyterhub_ip}}'"
+    line: "c.JupyterHub.hub_ip = '{{jupyterhub_ip_guts}}'"
     regexp: '^c.JupyterHub.hub_ip ='
 
 - name: jupyterhub config - set IP address
   lineinfile:
     dest: /etc/jupyterhub/jupyterhub_config.py
-    line: "c.JupyterHub.ip = '{{jupyterhub_ip}}'"
+    line: "c.JupyterHub.ip = '{{jupyterhub_ip_guts}}'"
     regexp: '^c.JupyterHub.ip ='
 
 - name: jupyterhub config - set IP address
   lineinfile:
     dest: /etc/jupyterhub/jupyterhub_config.py
-    line: "c.JupyterHub.proxy_api_ip = '{{jupyterhub_ip}}'"
+    line: "c.JupyterHub.proxy_api_ip = '{{jupyterhub_ip_guts}}'"
     regexp: '^c.JupyterHub.proxy_api_ip ='
 
 # jupyterhub config:: port number
@@ -169,7 +168,7 @@
   lineinfile:
     dest: /etc/jupyterhub/jupyterhub_config.py
     line: "c.JupyterHub.port = {{ jupyterhub_port }}"
-    regexp: "^c.jupyterHub.port ="
+    regexp: "^c.JupyterHub.port ="
 
 # config: select spawner
 - name: jupyterhub config - set sudo spawner
