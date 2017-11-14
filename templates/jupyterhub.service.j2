@@ -5,7 +5,7 @@ After=network.target firewalld.service
 [Service]
 User=jupyterhub
 Environment='PYTHONPATH=/etc/jupyterhub'
-ExecStart=/usr/local/bin/jupyterhub
+ExecStart={{ python_path }}/jupyterhub
 WorkingDirectory=/etc/jupyterhub
 
 [Install]
