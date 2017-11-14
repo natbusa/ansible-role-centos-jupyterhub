@@ -17,7 +17,7 @@
 
 ## PAM auth and SELinux settings
 - name: (SELinux) yum packages
-  yum: name={{item}} state=latest 
+  yum: name={{item}} state=latest
   with_items:
     - checkpolicy
     - policycoreutils
@@ -60,7 +60,7 @@
 
 - name: (docker) create a docker group
   group: name=docker state=present
-  
+
 - name: (docker) add jupyterhub to docker
   command: usermod -aG docker jupyterhub
 
@@ -136,14 +136,40 @@
 
 # jupyterhub config:: ip addresses
 
-- name: jupyterhub config - set IP address
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.hub_ip = '{{ansible_eth0.ipv4.address}}'"
+- name: determine default IP address for services
+  set_fact:
+    jupyterhub_ip: {{ ansible_eth0.ipv4.address }}
+  when: ! jupyterhub_ip|bool
+
+- debug:
+    var: jupyterhub_ip
+    verbosity: 1
 
 - name: jupyterhub config - set IP address
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.ip = '{{ansible_eth0.ipv4.address}}'"
+  lineinfile:
+    dest: /etc/jupyterhub/jupyterhub_config.py
+    line: "c.JupyterHub.hub_ip = '{{jupyterhub_ip}}'"
+    regexp: '^c.JupyterHub.hub_ip ='
 
 - name: jupyterhub config - set IP address
-  lineinfile: dest=/etc/jupyterhub/jupyterhub_config.py line="c.JupyterHub.proxy_api_ip = '{{ansible_eth0.ipv4.address}}'"
+  lineinfile:
+    dest: /etc/jupyterhub/jupyterhub_config.py
+    line: "c.JupyterHub.ip = '{{jupyterhub_ip}}'"
+    regexp: '^c.JupyterHub.ip ='
+
+- name: jupyterhub config - set IP address
+  lineinfile:
+    dest: /etc/jupyterhub/jupyterhub_config.py
+    line: "c.JupyterHub.proxy_api_ip = '{{jupyterhub_ip}}'"
+    regexp: '^c.JupyterHub.proxy_api_ip ='
+
+# jupyterhub config:: port number
+
+- name: jupyterhub config - set proxy port
+  lineinfile:
+    dest: /etc/jupyterhub/jupyterhub_config.py
+    line: "c.JupyterHub.port = {{ jupyterhub_port }}"
+    regexp: "^c.jupyterHub.port ="
 
 # config: select spawner
 - name: jupyterhub config - set sudo spawner
@@ -225,7 +251,7 @@
 
 - name: create self-signed SSL cert
   command: openssl req -new -nodes -x509 -subj "/C={{ssl_country}}/ST={{ssl_state}}/L={{ssl_city}}/O={{ssl_org}}/CN=${ansible_fqdn}" -days 3650 -keyout /etc/jupyterhub/server.key -out /etc/jupyterhub/server.crt -extensions v3_ca creates=/etc/jupyterhub/server.crt
-  when: 
+  when:
     - nossl == False
     - cert_exists.stat.exists == False
 
