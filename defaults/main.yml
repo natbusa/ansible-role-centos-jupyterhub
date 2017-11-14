@@ -8,8 +8,8 @@ ssl_city: ''
 ssl_org: ''
 python_path: /usr/local/bin
 
-# Set to some value, to override automatic value:
-#jupyterhub_ip:
+# Set to some truthy value to override automatic value:
+jupyterhub_ip: false
 jupyterhub_port: 8000
 
 # test users
